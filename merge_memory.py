@@ -10,7 +10,7 @@ def main():
                 in os.listdir(PATH_TO_HDD)
                 if '.mp4' in memory]
 
-    file_just_added = []
+    files_to_merge = []
 
     for i in range(len(memories) - 1):
         memory_a = memories[i]
@@ -21,18 +21,21 @@ def main():
 
         if abs(date_a - date_b).seconds <= 10:
             print(f'i need to merge {memory_a} and {memory_b}')
-            if memory_a not in file_just_added:
+            if memory_a not in files_to_merge:
                 os.system(f"echo file \\'{PATH_TO_HDD+memory_a}\\' >> lol.txt")
-                file_just_added.append(memory_a)
+                files_to_merge.append(memory_a)
             os.system(f"echo file \\'{PATH_TO_HDD+memory_b}\\' >> lol.txt")
-            file_just_added.append(memory_b)
+            files_to_merge.append(memory_b)
         else:
-            if len(file_just_added):
-                print('i am merging', file_just_added)
+            if len(files_to_merge):
+                print('i am merging', files_to_merge)
                 os.system(
-                    f'ffmpeg -f concat -safe 0 -i lol.txt -c copy /media/evan/72E93F4E4DD7285D/merged/{file_just_added[0]} >/dev/null 2>&1')
+                    f'ffmpeg -f concat -safe 0 -i lol.txt -c copy /media/evan/72E93F4E4DD7285D/merged/{files_to_merge[0]} >/dev/null 2>&1')
                 os.system(f"echo > lol.txt")
-                file_just_added.clear()
+                for part_of_video in files_to_merge:
+                    print('deleting', PATH_TO_HDD + part_of_video)
+                    os.system(f'rm -rf {PATH_TO_HDD + part_of_video}')
+                files_to_merge.clear()
 
 
 def rename_to_comma():
