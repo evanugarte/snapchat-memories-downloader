@@ -1,5 +1,6 @@
 import json
 import os
+from os import path
 import requests
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -7,23 +8,10 @@ from concurrent.futures import wait
 
 
 class MemoriesDownloader:
-    MONTH_MAP = {
-        '1': 'January',
-        '2': 'February',
-        '3': 'March',
-        '4': 'April',
-        '5': 'May',
-        '6': 'June',
-        '7': 'July',
-        '8': 'August',
-        '9': 'September',
-        '10': 'October',
-        '11': 'November',
-        '12': 'December',
-    }
-
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, path_to_json, download_location, thread_count=10):
+        self.path_to_json = path_to_json
+        self.download_location = download_location
+        self.thread_count = thread_count
         self.data = None
 
     def split_into_n_parts(self, lst, n):
@@ -32,43 +20,39 @@ class MemoriesDownloader:
             yield lst[i:i + n]
 
     def load_json(self):
-        with open(self.file_path) as f:
+        # for the number of threads we have, split the memories json
+        # into equal parts
+        with open(self.path_to_json) as f:
             self.data = json.load(f)
-        self.split_memories = list(self.split_into_n_parts(self.data, 10))
-
-    def ensure_directory_exists(self, memory):
-        if not os.path.isdir(f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}/'):
-            os.mkdir(f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}')
-        if not os.path.isdir(f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}/{self.MONTH_MAP[memory["month"]]}/'):
-            os.mkdir(
-                f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}/{self.MONTH_MAP[memory["month"]]}/')
-        if not os.path.isdir(f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}/{self.MONTH_MAP[memory["month"]]}/{memory["day"]}/'):
-            os.mkdir(
-                f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}/{self.MONTH_MAP[memory["month"]]}/{memory["day"]}/')
+        self.split_memories = list(self.split_into_n_parts(self.data,
+                                                           self.thread_count))
 
     def handle_download(self, memories_list):
         for memory in memories_list:
             print('downloading', memory['date'])
-            # self.ensure_directory_exists(memory)
-            # file_path = f'/media/evan/72E93F4E4DD7285D/snapchat/{memory["year"]}/{self.MONTH_MAP[memory["month"]]}/{memory["day"]}/{memory["time"]}.{memory["fileType"]}'
-            file_path = f'/media/evan/72E93F4E4DD7285D/snapchat_temp/{memory["date"]}.{memory["fileType"]}'
+            # get the full path to the memory we are about to save
+            # e.g. /path/to/memory/2020-08-16,19:12:45.mp4
+            file_path = path.join(self.download_location,
+                                  f'{memory["date"]}.{memory["fileType"]}')
             url = memory['awsLink']
             r = requests.get(url)
             with open(file_path, 'wb') as f:
+                # download the memory to the location specified
                 f.write(r.content)
             print('finished', file_path)
 
     def download_memories(self):
-        executor = ThreadPoolExecutor(10)
+        # create ten threads for
+        executor = ThreadPoolExecutor(self.thread_count)
+        # have each thread go about downloading its share of memories
         futures = [executor.submit(self.handle_download, memories)
                    for memories in self.split_memories]
         wait(futures)
 
 
-m = MemoriesDownloader('/home/evan/Documents/snapchat/aws_links_4160.json')
-m.load_json()
-m.download_memories()
-
-# get length of json
-
-# for n threads split indexes into n parts
+if __name__ == "__main__":
+    PATH_TO_JSON = '/home/evan/Documents/snapchat/aws_links.json'
+    PATH_TO_HDD = '/media/evan/72E93F4E4DD7285D/snapchat_temp/'
+    m = MemoriesDownloader(PATH_TO_JSON, PATH_TO_HDD)
+    m.load_json()
+    m.download_memories()
