@@ -1,4 +1,4 @@
-# snapchat-memories-saver
+# snapchat-memories-downloader
 This tool saves all your memories to your computer after you download your data from Snapchat.
 
 ### Tutorial Videos
