@@ -102,7 +102,7 @@ async function downloadMemories(jsonData, submitButtonElement) {
         .then(response => response.text())
         .then((data) => {
           awsLinks.push({
-            awsLink: data,
+            downloadLink: data,
             dateString: getAppropriateDateString(memory[DATE]),
             type: 'VIDEO' ? 'mp4': 'jpg',
           });
@@ -112,25 +112,33 @@ async function downloadMemories(jsonData, submitButtonElement) {
     );
   });
 
-  if (count === 0) {
-    submitButtonElement.classList.add('invalid');
-    submitButtonElement.textContent = 'Couldn\'t generate download links.\
-    You may need to rerequest your data from Snapchat and try again.';
-  } else {
     await Promise.all(promises)
       .then(() => {
         submitButtonElement.textContent = 'Downloading memories...'
       })
       .catch(_ => { });
 
-    awsLinks.forEach(awsLink => {
-      let a = document.createElement("a");
-      a.href = awsLink;
-      a.download = awsLink.dateString + '.' + awsLink.type;
+    let interval = setInterval(download, 300, awsLinks);
+    function download() {
+      var awsLink = awsLinks.pop();
+    
+      var a = document.createElement("a");
+      a.setAttribute('href', awsLink.downloadLink);
+      // a.setAttribute('download', 'HELP'); // doesnt work rn
+      a.setAttribute('target', '_blank');
       a.style.display = "none";
-      document.body.appendChild(a);
       a.click();
-    });
+    
+      if (awsLinks.length == 0) {
+        clearInterval(interval);
+      }
+  }
+
+  if (count === 0) {
+    submitButtonElement.classList.add('invalid');
+    submitButtonElement.textContent = 'Couldn\'t generate download links.\
+    You may need to rerequest your data from Snapchat and try again.';
+  } else {
     submitButtonElement.textContent = 'Done!';
   }
 }
