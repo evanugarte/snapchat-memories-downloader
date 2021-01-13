@@ -20,10 +20,14 @@ const DATE_TYPES = {
   FULLY_SPELLED_OUT: 'spelt-out',
 };
 
+function formatNumber(number) {
+  return number.toString().padStart(2, '0');
+}
+
 function getTime(date) {
   const convertedDate = new Date(date);
   const hours = convertedDate.getHours();
-  const minutes = convertedDate.getMinutes();
+  const minutes = formatNumber(convertedDate.getMinutes());
   if (use24Hr) {
     return hours + ":" + minutes;
   } else {
@@ -40,7 +44,8 @@ function fullySpeltOutDate(date) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   return `${MONTHS[convertedDate.getMonth()]} `
-    + `${convertedDate.getDay() + 1}, ${convertedDate.getFullYear()} `
+    + `${formatNumber(convertedDate.getDay() + 1)}, `
+    + `${convertedDate.getFullYear()} `
     + getTime(date);
 }
 
@@ -48,9 +53,11 @@ function dateWithSlashes(date, dayBeforeMonth = false) {
   const convertedDate = new Date(date);
   let result = '';
   if (dayBeforeMonth) {
-    result += `${convertedDate.getDay() + 1}/${convertedDate.getMonth() + 1}`;
+    result += `${formatNumber(convertedDate.getDay() + 1)}/`
+      + `${formatNumber(convertedDate.getMonth() + 1)}`;
   } else {
-    result += `${convertedDate.getMonth() + 1}/${convertedDate.getDay() + 1}`;
+    result += `${formatNumber(convertedDate.getMonth() + 1)}/`
+      + `${formatNumber(convertedDate.getDay() + 1)}`;
   }
   return result
     + `/${convertedDate.getFullYear()} `
@@ -102,9 +109,9 @@ async function downloadMemories(jsonData, submitButtonElement) {
         .then(response => response.text())
         .then((data) => {
           awsLinks.push({
-            awsLink: data,
+            downloadLink: data,
             dateString: getAppropriateDateString(memory[DATE]),
-            type: 'VIDEO' ? 'mp4': 'jpg',
+            type: memory[MEDIA_TYPE] === 'VIDEO' ? 'mp4' : 'jpg',
           });
           count++;
         })
@@ -112,26 +119,40 @@ async function downloadMemories(jsonData, submitButtonElement) {
     );
   });
 
+  await Promise.all(promises)
+    .then(() => {
+      submitButtonElement.textContent = 'Downloading memories...'
+    })
+    .catch(_ => { });
+
+  let interval = setInterval(download, 300, awsLinks);
+  async function download() {
+    const awsLink = awsLinks.pop();
+    await fetch('https://cors-anywhere.herokuapp.com/' + awsLink.downloadLink)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = blobUrl;
+        a.style = "display: none";
+        a.setAttribute('target', '_blank');
+        a.download = awsLink.dateString + '.' + awsLink.type;
+        document.body.appendChild(a);
+        a.click();
+      })
+      .catch();
+    if (awsLinks.length == 0) {
+      clearInterval(interval);
+    }
+  }
+
   if (count === 0) {
     submitButtonElement.classList.add('invalid');
     submitButtonElement.textContent = 'Couldn\'t generate download links.\
     You may need to rerequest your data from Snapchat and try again.';
   } else {
-    await Promise.all(promises)
-      .then(() => {
-        submitButtonElement.textContent = 'Downloading memories...'
-      })
-      .catch(_ => { });
-
-    awsLinks.forEach(awsLink => {
-      let a = document.createElement("a");
-      a.href = awsLink;
-      a.download = awsLink.dateString + '.' + awsLink.type;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-    });
-    submitButtonElement.textContent = 'Done!';
+    submitButtonElement.textContent =
+      `Done! ${count} / ${jsonData.length} memories downloaded.`;
   }
 }
 
