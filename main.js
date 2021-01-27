@@ -128,7 +128,7 @@ async function downloadMemories(jsonData, submitButtonElement) {
   let interval = setInterval(download, 300, awsLinks);
   async function download() {
     const awsLink = awsLinks.pop();
-    await fetch('http://0.0.0.0:8080/'
+    await fetch('https://snapchat-memory-saver-cors.herokuapp.com/'
       + awsLink.downloadLink)
       .then(response => response.blob())
       .then(blob => {
