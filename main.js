@@ -97,7 +97,17 @@ function getAppropriateDateString(date) {
 }
 
 async function downloadMemories(jsonData, submitButtonElement) {
-  let awsCount, downloadCount = 0;
+  let awsCount = 0, downloadCount = 0;
+  const callback = () => {
+    if (awsCount === 0 || downloadCount === 0) {
+      submitButtonElement.classList.add('invalid');
+      submitButtonElement.textContent = 'Couldn\'t generate download links.\
+      You may need to rerequest your data from Snapchat and try again.';
+    } else {
+      submitButtonElement.textContent =
+        `${downloadCount} / ${jsonData.length} memories downloaded.`;
+    }
+  };
   let promises = [];
   let awsLinks = [];
   submitButtonElement.textContent = 'Generating AWS download links...';
@@ -125,7 +135,7 @@ async function downloadMemories(jsonData, submitButtonElement) {
     })
     .catch(_ => { });
 
-  let interval = setInterval(download, 300, awsLinks);
+  let interval = setInterval(download, 300, awsLinks, callback);
   async function download() {
     const awsLink = awsLinks.pop();
     await fetch('https://snapchat-memory-saver-cors.herokuapp.com/'
@@ -133,30 +143,20 @@ async function downloadMemories(jsonData, submitButtonElement) {
       .then(response => response.blob())
       .then(blob => {
         const blobUrl = URL.createObjectURL(blob);
-        if (!blobUrl.includes('null')) {
-          let a = document.createElement("a");
-          a.href = blobUrl;
-          a.style = "display: none";
-          a.setAttribute('target', '_blank');
-          a.download = awsLink.dateString + '.' + awsLink.type;
-          document.body.appendChild(a);
-          a.click();
-          downloadCount++;
-        }
+        let a = document.createElement("a");
+        a.href = blobUrl;
+        a.style = "display: none";
+        a.setAttribute('target', '_blank');
+        a.download = awsLink.dateString + '.' + awsLink.type;
+        document.body.appendChild(a);
+        a.click();
+        downloadCount++;
       })
       .catch();
     if (awsLinks.length == 0) {
       clearInterval(interval);
+      callback();
     }
-  }
-
-  if (awsCount === 0 || downloadCount === 0) {
-    submitButtonElement.classList.add('invalid');
-    submitButtonElement.textContent = 'Couldn\'t generate download links.\
-    You may need to rerequest your data from Snapchat and try again.';
-  } else {
-    submitButtonElement.textContent =
-      `Done! ${count} / ${jsonData.length} memories downloaded.`;
   }
 }
 
