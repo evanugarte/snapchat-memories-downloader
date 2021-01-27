@@ -97,7 +97,7 @@ function getAppropriateDateString(date) {
 }
 
 async function downloadMemories(jsonData, submitButtonElement) {
-  let count = 0;
+  let awsCount, downloadCount = 0;
   let promises = [];
   let awsLinks = [];
   submitButtonElement.textContent = 'Generating AWS download links...';
@@ -113,7 +113,7 @@ async function downloadMemories(jsonData, submitButtonElement) {
             dateString: getAppropriateDateString(memory[DATE]),
             type: memory[MEDIA_TYPE] === 'VIDEO' ? 'mp4' : 'jpg',
           });
-          count++;
+          awsCount++;
         })
         .catch(_ => { })
     );
@@ -128,17 +128,21 @@ async function downloadMemories(jsonData, submitButtonElement) {
   let interval = setInterval(download, 300, awsLinks);
   async function download() {
     const awsLink = awsLinks.pop();
-    await fetch('https://cors-anywhere.herokuapp.com/' + awsLink.downloadLink)
+    await fetch('http://0.0.0.0:8080/'
+      + awsLink.downloadLink)
       .then(response => response.blob())
       .then(blob => {
         const blobUrl = URL.createObjectURL(blob);
-        let a = document.createElement("a");
-        a.href = blobUrl;
-        a.style = "display: none";
-        a.setAttribute('target', '_blank');
-        a.download = awsLink.dateString + '.' + awsLink.type;
-        document.body.appendChild(a);
-        a.click();
+        if (!blobUrl.includes('null')) {
+          let a = document.createElement("a");
+          a.href = blobUrl;
+          a.style = "display: none";
+          a.setAttribute('target', '_blank');
+          a.download = awsLink.dateString + '.' + awsLink.type;
+          document.body.appendChild(a);
+          a.click();
+          downloadCount++;
+        }
       })
       .catch();
     if (awsLinks.length == 0) {
@@ -146,7 +150,7 @@ async function downloadMemories(jsonData, submitButtonElement) {
     }
   }
 
-  if (count === 0) {
+  if (awsCount === 0 || downloadCount === 0) {
     submitButtonElement.classList.add('invalid');
     submitButtonElement.textContent = 'Couldn\'t generate download links.\
     You may need to rerequest your data from Snapchat and try again.';
