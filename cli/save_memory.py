@@ -51,8 +51,8 @@ class MemoriesDownloader:
 
 
 if __name__ == "__main__":
-    PATH_TO_JSON = '/home/evan/Documents/snapchat/aws_links.json'
-    PATH_TO_HDD = '/media/evan/72E93F4E4DD7285D/snapchat_temp/'
+    PATH_TO_JSON = os.getcwd() + '/aws_links.json'
+    PATH_TO_HDD = os.getcwd() + '/snapchat_temp/'
     m = MemoriesDownloader(PATH_TO_JSON, PATH_TO_HDD)
     m.load_json()
     m.download_memories()
