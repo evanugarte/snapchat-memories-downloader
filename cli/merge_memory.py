@@ -61,7 +61,7 @@ class MemoriesMerger:
 
 
 if __name__ == "__main__":
-    PATH_TO_HDD = '/media/evan/72E93F4E4DD7285D/snapchat_temp/'
+    PATH_TO_HDD = os.getcwd() + '/snapchat_temp/'
     memories_merger = MemoriesMerger(PATH_TO_HDD)
     memories_merger.load_memories()
     memories_merger.handle_merge()
