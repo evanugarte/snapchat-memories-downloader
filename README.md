@@ -3,7 +3,11 @@ This tool saves all your memories to your computer after you download your data 
 
 ## How to Download Memories
 ### From the Website
-Visit [snapchat-memory-saver.com](https://www.snapchat-memory-saver.com/)
+Snapchat now lets you download memories directly from the data request, so the website is no longer needed. For more information on how to do this, see
+
+https://help.snapchat.com/hc/en-us/articles/7012305371156-How-do-I-download-my-data-from-Snapchat-
+
+~Visit [snapchat-memory-saver.com](https://www.snapchat-memory-saver.com/)~
 
 ### Using the [`cli`](https://github.com/evanugarte/snapchat-memories-downloader/tree/master/cli) directory
 (make sure node and python3 are installed before!)
